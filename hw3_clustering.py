@@ -1,12 +1,27 @@
+"""
+This code implements a K-means and EM Gaussian mixture models per week 8 assignment of the machine learning module part of Columbia University Micromaster programme in AI. 
+Written using Python 3.X for running on Vocareum
 
+Execute as follows:
+$ python3 hw3_classification.py X.csv
+"""
 
+# builtin modules
+import sys
+import os
+import math
+from random import randrange
+import functools
+import operator
+import requests
 
+# 3rd party modules
 import numpy as np
 import pandas as pd
 import scipy as sp
-import sys
 
 X = np.genfromtxt(sys.argv[1], delimiter = ",")
+
 
 def KMeans(data):
 	#perform the algorithm with 5 clusters and 10 iterations...you may try others for testing purposes, but submit 5 and 10 respectively
@@ -27,13 +42,16 @@ def EMGMM(data):
     np.savetxt(filename, sigma[j], delimiter=",")
 
 
-## To run the script, simply add this to the end of the starter code:
+def main():
+
+	# for running in Vocareum
+	X = np.genfromtxt(sys.argv[1], delimiter = ",")
+	data = np.genfromtxt(sys.argv[1], delimiter = ",")
+
+	KMeans(data)
+	
+	EMGMM(data)
+
 
 if __name__ == '__main__':
-
- data = np.genfromtxt(sys.argv[1], delimiter = ",")
-
- KMeans(data)
-
- EMGMM(data)
-
+	main()

@@ -1,6 +1,6 @@
 ﻿# AI-ML-W8-clustering
 
-ColumbiaX CSMM.102x Machine Learning Course. Week 8 Assignment on clustering. In this project we implement the K-means and EM Gaussian mixture models.
+ColumbiaX CSMM.102x Machine Learning Course. Week 8 Assignment on clustering. In this project we implement unsupervised machine learning models via the K-means and EM Gaussian mixture models.
 
 
 ## Instructions
@@ -55,13 +55,12 @@ Please note that for both of these problems, there are multiple potential answer
 
 The following datasets have been selected from the UCI Machine Learning Repository for use and testing of the code written for this assignment:
 
-- [Forest Fires Data Set](http://archive.ics.uci.edu/ml/datasets/Forest+Fires). This is a difficult regression task, where the aim is to predict the burned area of forest fires, in the northeast region of Portugal, by using meteorological and other data (see details [here](http://www.dsi.uminho.pt/~pcortez/forestfires)).
-- [Wine Quality Data Set](http://archive.ics.uci.edu/ml/datasets/Wine+Quality). Two datasets are included, related to red and white vinho verde wine samples, from the north of Portugal. The goal is to model wine quality based on physicochemical tests (see [Cortez et al., 2009](http://www3.dsi.uminho.pt/pcortez/wine/)).
-- [Iris Data Set](http://archive.ics.uci.edu/ml/datasets/Iris). This is perhaps the best known database to be found in the pattern recognition literature. Fisher's paper is a classic in the field and is referenced frequently to this day. (see [Duda & Hart](http://rexa.info/paper/e6b7a3a8c46efef785a6ab735be07dafa0713ff3), for example.) The data set contains 3 classes of 50 instances each, where each class refers to a type of iris plant. One class is linearly separable from the other 2; the latter are NOT linearly separable from each other.
+- [3D Road Network (North Jutland, Denmark) Data Set](http://archive.ics.uci.edu/ml/datasets/3D+Road+Network+%28North+Jutland%2C+Denmark%29) This dataset was constructed by adding elevation information to a 2D road network in North Jutland, Denmark (covering a region of 185 x 135 km^2). Elevation values where extracted from a publicly available massive Laser Scan Point Cloud for Denmark (available at : [Web Link] (Bottom-most dataset)). This 3D road network was eventually used for benchmarking various fuel and CO2 estimation algorithms. This dataset can be used by any applications that require to know very accurate elevation information of a road network to perform more accurate routing for eco-routing, cyclist routes etc. For the data mining and machine learning community, this dataset can be used as 'ground-truth' validation in spatial mining techniques and satellite image processing. It has no class labels, but can be used in unsupervised learning and regression to guess some missing elevation information for some points on the road. The work was supported by the Reduction project that is funded by the European Comission as FP7-ICT-2011-7 STREP project number 288254. Refer to Citations & References.
 
 ## Citations & References
 
-- [Forest Fires Data Set](http://archive.ics.uci.edu/ml/datasets/Forest+Fires) by P. Cortez and A. Morais. A Data Mining Approach to Predict Forest Fires using Meteorological Data. In J. Neves, M. F. Santos and J. Machado Eds., New Trends in Artificial Intelligence, Proceedings of the 13th EPIA 2007 - Portuguese Conference on Artificial Intelligence, December, Guimaraes, Portugal, pp. 512-523, 2007. APPIA, ISBN-13 978-989-95618-0-9.
-- [Wine Quality Data Set](http://archive.ics.uci.edu/ml/datasets/Wine+Quality) by P. Cortez, A. Cerdeira, F. Almeida, T. Matos and J. Reis. Modeling wine preferences by data mining from physicochemical properties. In Decision Support Systems, Elsevier, 47(4):547-553, 2009.
-- [CIFAR-10 dataset](https://www.cs.toronto.edu/~kriz/cifar.html). The CIFAR-10 dataset has been used for testing the Naives Bayes classifier as it consists of colour images in 10 different classes. Chapter 3 of the following report describes the dataset and the methodology followed when collecting the CIFAR-10 dataset in much greater detail. Learning Multiple Layers of Features from Tiny Images, Alex Krizhevsky, 2009.
-- [Iris Data Set](http://archive.ics.uci.edu/ml/datasets/Iris) by Dua, D. and Graff, C. (2019). UCI Machine Learning Repository [http://archive.ics.uci.edu/ml]. Irvine, CA: University of California, School of Information and Computer Science.
+- [3D Road Network (North Jutland, Denmark) Data Set](http://archive.ics.uci.edu/ml/datasets/3D+Road+Network+%28North+Jutland%2C+Denmark%29) Building Accurate 3D Spatial Networks to Enable Next Generation Intelligent Transportation Systems (Accepted and to be published in June) Proceedings of International Conference on Mobile Data Management (IEEE MDM), June 3-6 2013, Milan, Italy.
+- [Build Better and Accurate Clusters with Gaussian Mixture Models](https://www.analyticsvidhya.com/blog/2019/10/gaussian-mixture-models-clustering/) by [Aishwarya Singh](https://www.analyticsvidhya.com/blog/author/aishwaryasingh/)
+- [In Depth: Gaussian Mixture Models](https://jakevdp.github.io/PythonDataScienceHandbook/05.12-gaussian-mixtures.html).
+- [Clustering with Gaussian Mixture Models](https://pythonmachinelearning.pro/clustering-with-gaussian-mixture-models/)
+- [K-Means Clustering in Python: A Practical Guide](https://realpython.com/k-means-clustering-python/)
