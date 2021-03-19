@@ -1,8 +1,9 @@
 {
   "ExpandedNodes": [
     "",
-    "\\ref"
+    "\\datasets",
+    "\\py37"
   ],
-  "SelectedNode": "\\hw3_clustering.py",
+  "SelectedNode": "\\py37\\kmeans-em.py",
   "PreviewInSolutionExplorer": false
 }

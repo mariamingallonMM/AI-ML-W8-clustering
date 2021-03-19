@@ -11,7 +11,7 @@ In this assignment, we will implement the K-means and EM Gaussian mixture models
 - With **K-means** we are trying to find **K centroids {μ1,…,μK}** and the corresponding assignments of **each data point {c1,…,cn}**, where each **ci ∈ {1,…,K}** and ci indicates which of the K clusters the observation xi belongs to. The objective function that we seek to minimize can be written:
 
 ![equation_1: L=∑ni=1∑Kk=11(ci=k)∥xi−μk∥2.](./ref/eq1.JPG?raw=true)
-- We will use the **EM algorithm** (Expectation-Maximisation algorithm) to learn the parameters of a **Gaussian mixture model** (GMM), that is learning **π**, **μ** and **Σ**. For this model, we assume a generative process for the data as follows:
+- We will use the **Expectation-Maximisation** (EM) algorithm to learn the parameters of a **Gaussian mixture model** (GMM), that is learning **π**, **μ** and **Σ**. For this model, we assume a generative process for the data as follows:
 
 ![equation_2: xi|ci∼Normal(μci,Σci),ci∼Discrete(π).](./ref/eq2.JPG?raw=true)
 - In the above equation, the  *ith* observation is first assigned to one of  **K  clusters** according to the probabilities in **vector  π**, and the value of observation  **xi**  is then generated from one of  **K multivariate Gaussian distributions**, using the *mean (μ)* and *covariance indexed by ci*. 
