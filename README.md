@@ -41,6 +41,14 @@ When executed, the code writes several output files, each as described below, wh
 - mu-[iteration].csv: This is a comma separated file containing the means of each Gaussian of the EM-GMM model. The  k th row should contain the  k th mean , and there should be 5 rows. There should be 10 total files. For example, "mu-3.csv" will contain the means of each Gaussian after the 3rd iteration.
 - Sigma-[cluster]-[iteration].csv: This is a comma separated file containing the covariance matrix of one Gaussian of the EM-GMM model. If the data is  d -dimensional, there should be  d  rows with  d  entries in each row. There should be 50 total files. For example, "Sigma-2-3.csv" will contain the covariance matrix of the 2nd Gaussian after the 3rd iteration.
 
+## Plots
+
+The following is a sample of some of the plots produced using 'Clustering_gmm.csv':
+
+![plot1](./images/newplot1.PNG?raw=true)
+![plot2](./images/newplot2.PNG?raw=true)
+![plot3](./images/newplot3.PNG?raw=true)
+
 
 ## Note on Correctness
 
