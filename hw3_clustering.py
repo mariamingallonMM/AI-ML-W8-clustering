@@ -1,9 +1,9 @@
 """
 This code implements a K-means and EM Gaussian mixture models per week 8 assignment of the machine learning module part of Columbia University Micromaster programme in AI. 
-Written using Python 3.X for running on Vocareum
+Written using Python 3.7 for running on Vocareum
 
 Execute as follows:
-$ python3 hw3_classification.py X.csv
+$ python3 hw3_clustering.py X.csv
 """
 
 # builtin modules
@@ -14,6 +14,7 @@ from random import randrange
 import functools
 import operator
 import requests
+import psutil
 
 # 3rd party modules
 import numpy as np
@@ -21,301 +22,341 @@ import pandas as pd
 import scipy as sp
 from scipy.cluster.vq import kmeans2
 from scipy.stats import multivariate_normal
+from scipy.spatial.distance import cdist
+from scipy.special import logsumexp
+from scipy import stats
 
 
-# import plotting modules; not needed in Vocareum
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-
-# Plotting functions; not needed in Vocareum
-
-def plot_inputs(df, names_in:list = ['A','B','label']):
-        """
-        Plot the input dataset as a scatter plot, showing the two classes with two different patterns.
-        - source_file: csv file with the input samples
-        - weights: from perceptron_classify function
-        - names_in: a list of the names of the columns (headers) in the input df
-        returns:
-        - a plot of the figure in the default browser, and
-        - a PNG version of the plot to the "images" project directory
-        """ 
-        # Create the figure for plotting the initial data
-        fig = go.Figure(data=go.Scatter(x=df[names_in[0]], 
-                                        y=df[names_in[1]],
-                                        mode='markers',
-                                        marker=dict(
-                                        color=df[names_in[2]],
-                                        colorscale='Viridis',
-                                        line_width=1,
-                                        size = 16),
-                                        text=df[names_in[2]], # hover text goes here
-                                        showlegend=False))  # turn off legend only for this item
-
-        # Give the figure a title
-        fig.update_layout(title='Perceptron Algorithm | Classification with support vector classifiers | Problem 3',
-                          xaxis_title=names_in[0],
-                          yaxis_title=names_in[1])
-
-        # Show the figure, by default will open a browser window
-        fig.show()
-
-        # export plot to png file to images directory
-        # create an images directory if not already present
-        if not os.path.exists("images"):
-            os.mkdir("images")
-        ## write the png file with the plot/figure
-        return fig.write_image("images/fig3.png")
-
-def plot_model(X, y, xx, y_, Z, kernel_type:str):
-        """
-        Plot the decision boundary from:
-        - X: the features dataset,
-        - y: the labels vector, 
-        - h: step size in the mesh, e.g. 0.02
-        - grid_search: model of the grid_search already fitted
-        - model_type: str of the type of model used for title of plot and filename of image to export
-        returns:
-        - a plot of the figure in the default browser, and
-        - a PNG version of the plot to the "images" project directory
-        """ 
-
-        # Create the figure for plotting the model
-        fig = go.Figure(data=go.Scatter(x=X[:, 0], y=X[:, 1], 
-                            mode='markers',
-                            showlegend=False,
-                            marker=dict(
-                                color=y,
-                                colorscale='Viridis',
-                                line_width=1,
-                                size = 16),
-                            text='Label', # hover text goes here
-                            showlegend=False))  # turn off legend only for this item
-        
-        # Add the heatmap to the plot
-        fig.add_trace(go.Heatmap(x=xx[0], y=y_, z=Z,
-                          colorscale='Rainbow',
-                          showscale=False))
-        
-        # Give the figure a title and name the x,y axis as well
-        fig.update_layout(
-            title='Perceptron Algorithm | Classification with support vector classifiers | ' + kernel_type.upper(),
-            xaxis_title='A',
-            yaxis_title='B')
-
-        # Show the figure, by default will open a browser window
-        fig.show()
-
-        # export plot to png file to images directory
-        # create an images directory if not already present
-        if not os.path.exists("images"):
-            os.mkdir("images")
-        ## write the png file with the plot/figure
-        return fig.write_image("images/fig3-" + kernel_type + ".png")
-
-def plot_multiple():
+def KMeans(data, k, iterations, **kwargs):
     """
-    #TODO: Docs missing
-    """
-    # data
-    np.random.seed(123)
-    frame_rows = 50
-    n_plots = 36
-    frame_columns = ['V_'+str(e) for e in list(range(n_plots+1))]
-    df = pd.DataFrame(np.random.uniform(-10,10,size=(frame_rows, len(frame_columns))),
-                      index=pd.date_range('1/1/2020', periods=frame_rows),
-                        columns=frame_columns)
-    df=df.cumsum()+100
-    df.iloc[0]=100
+    It uses the scipy.klearn2 algorithm to classify a set of observations into k clusters using the k-means algorithm (scipy.kmeans2). It attempts to minimize the Euclidean distance between observations and centroids. Note the following methods for initialization are available:
+        - ‘random’: generate k centroids from a Gaussian with mean and variance estimated from the data.
+        - ‘points’: choose k observations (rows) at random from data for the initial centroids.
+        - ‘++’: choose k observations accordingly to the kmeans++ method (careful seeding)
+        - ‘matrix’: interpret the k parameter as a k by M (or length k array for 1-D data) array of initial centroids.
 
-    # plotly setup
-    plot_rows=6
-    plot_cols=6
-    fig = make_subplots(rows=plot_rows, cols=plot_cols)
+    It is recommended the kmeans algorithm is initialized by randomly selecting 5 data points (minit = "points", with k = 5). Also, note we use the identity matrix for each cluster's covariance matrix for the initialization. We also try initializing data points without replacement: for example, using np.random.choice and set replace = False.
+    ------------
+    Parameters:
 
-    # add traces
-    x = 0
-    for i in range(1, plot_rows + 1):
-        for j in range(1, plot_cols + 1):
-            #print(str(i)+ ', ' + str(j))
-            fig.add_trace(go.Scatter(x=df.index, y=df[df.columns[x]].values,
-                                     name = df.columns[x],
-                                     mode = 'lines'),
-                         row=i,
-                         col=j)
+    - data: ndarray of the set of observations to classify, the n data points {x1,…,xn}, where each xi ∈ Rd (shape: n, d; where n: number of rows, d: number of features/columns)
+    - k: number of clusters to consider, 5 clusters by default
+    - iterations: number of iterations to consider, 10 iterations by default
+    ------------
+    Returns:
 
-            x=x+1
-
-    # Format and show fig
-    fig.update_layout(height=1200, width=1200)
-    fig.show()
-
-    return
-
-# Not needed
-def summarize_dataframe(dataframe, class_value, n_features):
-
-    """
-    Calculate the mean, standard deviation and count for each column in the dataframe from the following inputs:
-        dataframe : dataset to summarise as a DataFrame
-        class_value : the value (label from 0 to 9) of the class being summarised
-        n_features : number of features (columns) in the training dataset (X_train + y_train)
-    
-    It returns a DataFrame of mean, std and count for each column/feature in the dataset. The number of features is used to populate the mean, stdv and coun figures for the unseen classes in the training dataset for the number of classes specify in k_classes.
-
-    """
-    if dataframe.shape == (0,0):
-        mean = np.append(np.zeros(n_features), [class_value])
-        sigma = np.zeros(n_features + 1)
-        count = np.zeros(n_features + 1)
-    else:
-        mean = dataframe.mean(axis=0)
-        sigma = dataframe.std(axis=0, ddof=1)  #ddof = 0 to have same behaviour as numpy.std, std takes the absolute value before squaring
-        count = dataframe.count(axis=0)
-    
-    frame = {'mean': mean, 'std': sigma, 'count': count}
-
-    summaries = pd.DataFrame(frame)
-
-    return summaries
-
-
-def KMeans(data, k:int = 5, n:int = 10, **kwargs):
-	"""
-	It uses the scipy.klearn2 algorithm to classify a set of observations into k clusters using the k-means algorithm. It attempts to minimize the Euclidean distance between observations and centroids. Note the following methods for initialization are available:
-	# - ‘random’: generate k centroids from a Gaussian with mean and variance estimated from the data.
-	# - ‘points’: choose k observations (rows) at random from data for the initial centroids.
-	# - ‘++’: choose k observations accordingly to the kmeans++ method (careful seeding)
-	# - ‘matrix’: interpret the k parameter as a k by M (or length k array for 1-D data) array of initial centroids.
-
-	It is recommended the kmeans algorithm is initialized by randomly selecting 5 data points (minit = "points", with k = 5)
-
-    Also, note we use the identity matrix for each cluster's covariance matrix for the initialization. We also try initializing data points without replacement: for example, using np.random.choice and set replace = False.
-	
-	Parameters:
-	- data: ndarray of the set of observations to classify, the n data points {x1,…,xn}, where each xi ∈ Rd
-	- k: number of clusters to consider, 5 clusters by default
-	- n: number of iterations to consider, 10 iterations by default
-	
-	Returns:
     - centroids, which are the means for each cluster {μ1,…,μK}
     - labels, are the corresponding assignments of each data point {c1,…,cn}, where each ci ∈ {1,…,K} and ci indicates which of the K clusters the observation xi belongs to.
-	- writes the centroids of the clusters to a txt file; pass on a path if different from the default being "current working directory" + "outputs" 
-	
-	"""
-	# Convert dataframe to np array
-	data = data.to_numpy()
+    - writes the centroids of the clusters associated with each iteration to a csv file, one file per iteration; pass on a path if different from the default being "current working directory" + "outputs"
+    """
 
-    # TODO: Before passing array of data to kmeans2, we need to convert it to a Multivariate Gaussian distribution so 'data' becomes an array with shape (100, 2), where the first column is the mean, and second one the covariance; each row is each 'ith' observation in the dataset. Note the covariance shall be the identity matrix to start with. The means are the centroids.
-    # mean = centroids
-    # cov = np.identity(n); n = shape of matrix to match columns in mean/centroids vector
-    #Multivariate_Gaussian = np.random.multivariate_normal(mean, cov)
-
-	# Use scipy method 'kmeans2' for obtaining the centroids of clusters in data
-	# We use the 'kmeans2' method inside a loop to save results from each iteration
-    # TODO: include comparison to scipy.cluster.vq.kmeans
-    
+    #data = data.to_numpy() # Convert dataframe to np array
     centroids_list = []
     labels_list = []
-    
-    for i in range(n):
-		centroids, label = kmeans2(data, k, iter = i+1, minit='points')
+
+    for i in range(iterations):
+        centroids, label = kmeans2(data, k, iter = i+1, minit='points')
         centroids_list.append(centroids)
         labels_list.append(label)
-		filename = "centroids-" + str(i+1) + ".csv" #"i" would be each iteration
-		
-		if 'path' in kwargs:
-			path = kwargs['path']
-			filepath = os.path.join(path, filename)
-			np.savetxt(filepath, centroids, delimiter=",")
-		else:
-			path = os.path.join(os.getcwd(), "outputs")
-			filepath = os.path.join(path, filename)
-			np.savetxt(filepath, centroids, delimiter=",")
-
+        filename = "centroids-" + str(i+1) + ".csv" #"i" would be each iteration
+        if 'path' in kwargs:
+            path = kwargs['path']
+            filepath = os.path.join(path, filename)
+            np.savetxt(filepath, centroids, delimiter=",")
+        else:
+            path = os.getcwd() # os.path.join(os.getcwd(), "outputs")
+            filepath = os.path.join(path, filename)
+            np.savetxt(filepath, centroids, delimiter=",")
+    
     return centroids_list, labels_list
 
+def calculate_mean_covariance(data, centroids, labels):
+    """
+    Calculates means and covariance of different clusters from k-means prediction. This helps us calculate values for our initial parameters. It takes in our data as well as our predictions from k-means and calculates the weights, means and covariance matrices of each cluster. Note that we shall use the results from each of the iterations of k-means algorithm.
 
-def EMGMM(data):
-	"""
-	Performs the Expectation-Maximisation (EM) algorithm to learn the parameters of a Gaussian mixture model (GMM), that is learning **π**, **μ** and **Σ**. For this model, we assume a generative process for the data as follows:
+    Note that 'counter' is equivalent to 'cluster_label' provided the clusters are of int type and ranging from '0' to 'k'. We could have simplified counter = cluster_label but we chose not to do so to allow for cases in which the lable is not an integer.
+    ------------
+    Parameters:
 
-	xi|ci∼Normal(μci,Σci),ci∼Discrete(π)
-	
-	where:
-   - the ith observation is first assigned to one of K clusters according to the probabilities in vector  π, and 
-   - the value of observation xi is then generated from one of K multivariate Gaussian distributions, using the mean (μ) and covariance indexed by ci. 
-	
-	Finally, we implement the EM algorithm to maximize the equation below over all parameters (π,μ1,…,μK,Σ1,…,ΣK) using the cluster assignments (c1,…,cn) as the hidden data:
-	
-	p(x1,…,xn|π,μ,Σ)=∏ni=1p(xi|π,μ,Σ)
-	"""
-	filename = "pi-" + str(i+1) + ".csv" 
-	np.savetxt(filename, pi, delimiter=",") 
-	filename = "mu-" + str(i+1) + ".csv"
-	np.savetxt(filename, mu, delimiter=",")  #this must be done at every iteration
+    - data: ndarray of the set of observations to classify, the n data points {x1,…,xn}, where each xi ∈ Rd (shape: n, d; where n: number of rows, d: number of features/columns)
+    - centroids: centroids from KMeans method
+    - labels: cluster labels from KMeans method, note it includes all the iterations
+    - k: number of clusters (also number of Gaussians)
+
+    -------------
+    Returns:
+
+    A tuple containing:
+        
+    - initial_pi: initial array of pik (πk = nk / n) values for each cluster k to input in the E-step of EM algorithm (shape: k,)
+    - initial_mean: initial array of mu (μk, mean) values for each cluster kto input in the E-step of EM algorithm (shape: k, d)
+    - initial_sigma: initial array of covariance (Σk, sigma) values for each cluster k to input in the E-step of EM algorithm (shape: k, d*d)
+        
+    """
+    # initialize the output ndarrays with zeros, for filling up in loops below
+    d = data.shape[1]
+    k = len(centroids[0]) # to take number of clusters directly from KMeans
+    initial_pi = np.zeros(k)
+    initial_mean = np.zeros((k, d))
+    initial_sigma = np.zeros((k, d, d))
     
-  for j in range(k): #k is the number of clusters 
-    filename = "Sigma-" + str(j+1) + "-" + str(i+1) + ".csv" #this must be done 5 times (or the number of clusters) for each iteration
-    np.savetxt(filename, sigma[j], delimiter=",")
+    # ensure data is dataframe from np.ndarray
+    data = pd.DataFrame(data=data)
 
+    # get the number of iterations from the lenght of centroids (or labels)
+    iterations = len(centroids)
+        
+    for i in range(iterations):
+        iter_centroid = centroids[i]
+        iter_labels = labels[i]
+        # initialize counter to organize outputs per cluster k (counter = cluster_labels if the latter are int type ranging from 0 to k)
+        counter=0
+        for cluster_label in np.unique(iter_labels):
+            # returns indices of rows estimated to belong to the cluster
+            ids = np.where(iter_labels == cluster_label)[0] 
+            # calculate pi (π = nk / n) for cluster k (πk)
+            nk = data.iloc[ids].shape[0] # number of data points in current gaussian/cluster
+            n = data.shape[0] # total number of points/rows in dataset
+            initial_pi[counter] = nk / n
 
-def write_csv(filename, a, **kwargs):
-        # write the outputs csv file
-        if 'header' in kwargs:
-            header = kwargs['header']
-        else:
-            header = False
-        if 'path' in kwargs:
-            filepath = kwargs['path']
-        else:
-            filepath = os.path.join(os.getcwd(),'datasets','out', filename)
+            # calculate mean (mu) of points estimated to be in cluster k (μk)
+            initial_mean[counter,:] = np.mean(data.iloc[ids], axis = 0)
+            de_meaned = data.iloc[ids] - initial_mean[counter,:]
+            
+            # calculate covariance (Σ, sigma) of points estimated to be in cluster k (Σk) 
+            initial_sigma[counter, :, :] = np.dot(initial_pi[counter] * de_meaned.T, de_meaned) / nk
+            
+            counter+=1
+        
+        #assert np.sum(initial_pi) == 1    
+            
+    return (initial_pi, initial_mean, initial_sigma)
 
-        df = pd.DataFrame(a)
-        df.to_csv(filepath, index = False, header = header)
-        return print("New Outputs file saved to: <<", filename, ">>", sep='', end='\n')
-
-
-def get_data(source_file, **kwargs):
+def initialise_parameters(data, k, iterations):
     """
-    Read data from a file given its name. Option to provide the path to the file if different from: [./datasets/in]
+    Calls the function KMeans to obtain the starting centroids and label values and use them as starting parameters for the EMGMM algorithm. 
+    
+    ------------    
+    Parameters:
+    
+    - data: ndarray of the set of observations to classify, the n data points {x1,…,xn}, where each xi ∈ Rd (shape: n, d; where n: number of rows, d: number of features/columns)
+    
+    ----------
+    Returns:
+    
+    A tuple containing:
+        
+    - initial_pi: initial array of pik (πk = nk / n) values for each cluster k to input in the E-step of EM algorithm (shape: k,)
+    - initial_mean: initial array of mu (μk, mean) values for each cluster k to input in the E-step of EM algorithm (shape: k, d)
+    - initial_sigma: initial covariance matrices (Σk, sigma), one matrix for each cluster k to input in the E-step of EM algorithm (shape: k, d*d)
+        
+    """
+    centroids, labels =  KMeans(data, k, iterations)
+
+    (initial_pi, initial_mean, initial_sigma) = calculate_mean_covariance(data, centroids, labels)
+        
+    return (initial_pi, initial_mean, initial_sigma)
+
+def e_step(data, pi, mu, sigma):
+    """
+    Performs E-step on GMM model
+    
+    ------------
+    Parameters:
+    
+    - data: data points in numpy array (shape: n, d; where n: number of rows, d: number of features/columns)
+    - pi: weights of mixture components pik (πk = nk / n) values for each cluster k in an array (shape: k,)
+    - mu: mixture component mean (μk, mean) values for each cluster k in an array (shape: k, d)
+    - sigma: mixture component covariance matrices (Σk, sigma), one matrix for each cluster k (shape: k, d, d)
+    
+    ----------
+    Returns:
+
+    - gamma: probabilities of clusters for datapoints (shape: n, k)
 
     """
-    # Define input and output filepaths
-    input_path = os.path.join(os.getcwd(),'datasets', source_file)
 
-    if 'col_titles' in kwargs:
-        # Read input data
-        df = pd.read_csv(input_path, names = kwargs['col_titles'])
+    n = data.shape[0]
+    k = len(pi)
+    gamma = np.zeros((n, k))
+
+    # convert np.nan to float(0.0)
+    pi = np.nan_to_num(pi)
+    mu = np.nan_to_num(mu)
+    sigma = np.nan_to_num(sigma)
+
+    x = data #.to_numpy() # Convert dataframe to np array
+
+    for cluster in range(k):
+        # Posterior Distribution using Bayes Rule
+        gamma[ : , cluster] = pi[cluster] * multivariate_normal(mean=mu[cluster,:], cov=sigma[cluster], allow_singular=True).pdf(x)
+
+    gamma = np.nan_to_num(gamma) # convert np.nan to float(0.0)
+    # normalize across columns to make a valid probability
+    gamma_norm = np.sum(gamma, axis=1)[ : , np.newaxis]
+    gamma_norm = np.nan_to_num(gamma_norm)
+    # avoid issues with divide by zero of ndarray
+    gamma = np.divide(gamma, gamma_norm, out=np.zeros_like(gamma), where=gamma_norm!=0)
+    #gamma /= gamma_norm
+
+    return np.nan_to_num(gamma)
+
+def m_step(data, gamma, sigma):
+    """
+    #TODO: further improve these docs
+
+    Performs M-step of the GMM. It updates the priors, pi, means and covariance matrix.
+    -----------
+    Parameters:
+    
+    - data: ndarray of the set of observations to classify, the n data points {x1,…,xn}, where each xi ∈ Rd (shape: n, d; where n: number of rows, d: number of features/columns)
+    - gamma: probabilities of clusters for datapoints (shape: n, k)
+    - sigma:
+    
+    ---------
+    Returns:
+
+    - pi: updated weights of mixture components pik (πk = nk / n) values for each cluster k in an array (shape: k,)
+    - mu: updated mixture component mean (μk, mean) values for each cluster k in an array (shape: k, d)
+    - sigma: updated mixture component covariance matrices (Σk, sigma), one matrix for each cluster k (shape: k, d, d)
+
+    """
+    n = data.shape[0] # number of datapoints (rows in the dataset), equivalent of gamma.shape[0]
+    k = gamma.shape[1] # number of clusters
+    d = data.shape[1] # number of features (columns in the dataset)
+    
+    # convert np.nan to float(0.0)
+    gamma = np.nan_to_num(gamma)
+    sigma = np.nan_to_num(sigma)
+
+    # calculate pi and mu for each Gaussian
+    pi = np.mean(gamma, axis = 0)
+    # avoid issues with divide by zero of ndarray
+    #mu = dividend / divisor
+    dividend = np.dot(gamma.T, data)
+    divisor = np.sum(gamma, axis = 0)[:,np.newaxis]
+    mu = np.divide(dividend, divisor, out=np.zeros_like(dividend), where=divisor!=0)
+
+    x = data #.to_numpy() # Convert dataframe to np array
+
+    # update sigma for each Gaussian
+    for cluster in range(k):
+        x = x - mu[cluster, :] # (shape: n, d)
+        gamma_diag = np.diag(gamma[: , cluster])
+        x_mu = np.matrix(x)
+        gamma_diag = np.matrix(gamma_diag)
+
+        sigma_cluster = x.T * gamma_diag * x
+        gamma = np.nan_to_num(gamma) # convert np.nan to float(0.0)
+        #sigma = dividend / divisor
+        dividend = (sigma_cluster)
+        divisor = np.sum(gamma, axis = 0)[:,np.newaxis][cluster]
+        sigma[cluster,:,:] = np.divide(dividend, divisor, out=np.zeros_like(dividend), where=divisor!=0)
+
+    return pi, mu, sigma
+
+def predict(data, pi, mu, sigma, k):
+    """
+    Returns predicted labels using Bayes Rule to calculate the posterior distribution
+    
+    -------------
+    Parameters:
+    
+    - data: ndarray of the set of observations to classify, the n data points {x1,…,xn}, where each xi ∈ Rd (shape: n, d; where n: number of rows, d: number of features/columns)
+    - k: number of clusters to consider, 5 clusters by default
+
+    ----------
+    Returns:
+    
+    - labels: the predicted label/cluster based on highest probability gamma.
+        
+    """
+    n = data.shape[0] # number of datapoints (rows in the dataset)
+    labels = np.zeros((n, k))
+
+    # convert np.nan to float(0.0)
+    pi = np.nan_to_num(pi)
+    mu = np.nan_to_num(mu)
+    sigma = np.nan_to_num(sigma)
+    
+    #x = data.to_numpy() # Convert dataframe to np array
+
+    for cluster in range(k):
+        labels [:,cluster] = pi[cluster] * multivariate_normal(mean=mu[cluster,:], cov=sigma[cluster], allow_singular=True).pdf(data)
+    labels  = labels .argmax(1)
+
+    return labels 
+
+ 
+def EMGMM(data, k, iterations, **kwargs):
+    """
+    Performs the Expectation-Maximisation (EM) algorithm to learn the parameters of a Gaussian mixture model (GMM), that is learning **π**, **μ** and **Σ**. A Gaussian mixture model (GMM) attempts to discover a mixture of multi-dimensional Gaussian probability distributions that best model any input dataset. GMMs can be used for finding clusters in the same manner as k-means.
+
+    ------------
+    Parameters:
+
+    - data: ndarray of the set of observations to classify, the n data points {x1,…,xn}, where each xi ∈ Rd (shape: n, d; where n: number of rows, d: number of features/columns)
+    - k: number of clusters to consider, 5 clusters by default
+    - n: number of iterations to consider, 10 iterations by default
+
+    ------------
+    Returns:
+
+    The following csv files:
+
+    - pi-[iteration].csv: This is a comma separated file containing the cluster probabilities of the EM-GMM model. The  k th row should contain the  k th probability,  πk , and there should be 5 rows. There should be 10 total files. For example, "pi-3.csv" will contain the cluster probabilities after the 3rd iteration.
+    - mu-[iteration].csv: This is a comma separated file containing the means of each Gaussian of the EM-GMM model. The  k th row should contain the  k th mean , and there should be 5 rows. There should be 10 total files. For example, "mu-3.csv" will contain the means of each Gaussian after the 3rd iteration.
+    - sigma-[cluster]-[iteration].csv: This is a comma separated file containing the covariance matrix of one Gaussian of the EM-GMM model. If the data is  d -dimensional, there should be  d  rows with  d  entries in each row. There should be 50 total files. For example, "sigma-2-3.csv" will contain the covariance matrix of the 2nd Gaussian after the 3rd iteration.
+
+    """
+
+    if 'tol' in kwargs:
+        tol = kwargs['tol']
     else:
-        # Read input data
-        df = pd.read_csv(input_path)
-       
-    return df
+        tol = 1e-6
+            
+    d = data.shape[1] # number of features (columns in the dataset)
+    n = data.shape[0] # number of datapoints (rows in the dataset)
+
+    x = data #.to_numpy() # Convert dataframe to np array
+
+    pi, mu, sigma =  initialise_parameters(data, k, iterations)
+
+    for i in range(iterations):  
+        gamma  = e_step(data, pi, mu, sigma)
+        pi, mu, sigma = m_step(data, gamma, sigma)
+        filename = "pi-" + str(i + 1) + ".csv"
+        np.savetxt(filename, pi, delimiter=",") #this must be done at every iteration
+        filename = "mu-" + str(i + 1) + ".csv"
+        np.savetxt(filename, mu, delimiter=",")  #this must be done at every iteration
+        for cluster in range(k): #k is the number of clusters
+            filename = "sigma-" + str(cluster + 1) + "-" + str(i + 1) + ".csv" #this must be done k times for each iteration
+            np.savetxt(filename, sigma[cluster], delimiter=",")
+
+    predicted_labels = predict(x, pi, mu, sigma, k)
+
+    # convert np.nan to float(0.0)
+    pi = np.nan_to_num(pi)
+    mu = np.nan_to_num(mu)
+    sigma = np.nan_to_num(sigma)
+
+    # compute centers as point of highest density of distribution
+    centroids = np.zeros((k,d))
+
+    for cluster in range(k):
+        density = multivariate_normal(mean=mu[cluster], cov=sigma[cluster], allow_singular=True).logpdf(x)
+        centroids[cluster, :] = x[np.argmax(density)]
+   
+    return centroids, predicted_labels
 
 
 def main():
-
-	# for running in Vocareum
-	#X = np.genfromtxt(sys.argv[1], delimiter = ",")
-	#data = np.genfromtxt(sys.argv[1], delimiter = ",")
-	#X = pd.DataFrame(data=X)
-	#data = pd.DataFrame(data=data)
-
-	df = get_data('iris.data.csv', col_titles=['sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'species_class']) #use for irisdata set
-
-	# to ensure label is numerical, convert the last column of the dataframe to numerical instead of categorical; note this will not be needed in Vocareum as data passed onto functions is expected to be non-categorical already.	
-	_, cols = df.shape
-	df[df.columns[cols - 1]] = df[df.columns[cols - 1]].astype('category')
-	col_class = df.select_dtypes(['category']).columns
-	df[col_class] = df[col_class].apply(lambda x: x.cat.codes)
-
-	data = df
-	
-	# write the clusters in the data, one txt per iteration
-	KMeans(data)
-	
-	EMGMM(data)
-
+    #Uncomment next line when running in Vocareum
+    data=np.genfromtxt(sys.argv[1], delimiter = ',', skip_header=1)
+    #Run KMeans to get clusters in the data and a csv of clusters per iteration
+    centroids, labels = KMeans(data, 5, 10)
+    #Run EMGMM to output the required csv files plus the predicted_labels
+    c_emgmm, l_emgmm = EMGMM(data, 5, 10)
 
 if __name__ == '__main__':
-	main()
+    main()

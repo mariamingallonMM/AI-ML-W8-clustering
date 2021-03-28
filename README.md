@@ -9,16 +9,15 @@ In this assignment, we will implement the K-means and EM Gaussian mixture models
 
 - We are given **n** data points **{x1,…,xn}**, where each **xi∈Rd**.
 - With **K-means** we are trying to find **K centroids {μ1,…,μK}** and the corresponding assignments of **each data point {c1,…,cn}**, where each **ci ∈ {1,…,K}** and ci indicates which of the K clusters the observation xi belongs to. The objective function that we seek to minimize can be written:
-
 ![equation_1: L=∑ni=1∑Kk=11(ci=k)∥xi−μk∥2.](./ref/eq1.JPG?raw=true)
 - We will use the **Expectation-Maximisation** (EM) algorithm to learn the parameters of a **Gaussian mixture model** (GMM), that is learning **π**, **μ** and **Σ**. For this model, we assume a generative process for the data as follows:
-
 ![equation_2: xi|ci∼Normal(μci,Σci),ci∼Discrete(π).](./ref/eq2.JPG?raw=true)
 - In the above equation, the  *ith* observation is first assigned to one of  **K  clusters** according to the probabilities in **vector  π**, and the value of observation  **xi**  is then generated from one of  **K multivariate Gaussian distributions**, using the *mean (μ)* and *covariance indexed by ci*. 
 - Finally, implement the EM algorithm to maximize, the equation below over all parameters **π,μ1,…,μK,Σ1,…,ΣK** using the cluster assignments **c1,…,cn** as the hidden data:
-
 ![equation_3: p(x1,…,xn|π,μ,Σ)=∏ni=1p(xi|π,μ,Σ).](./ref/eq3.JPG?raw=true)
-- Note that the **K-means** and **EG-GM** algorithms shall be written to **learn 5 clusters**. Run both algorithms for **10 iterations**. The algorithms can be initialized arbitrarily. It is recommended that the K-means centroids are initialized by randomly selecting 5 data points ([K-memoids](https://en.wikipedia.org/wiki/K-medoids)). For the EM-GMM, the mean vectors can be initialized in the same fashion, with **π** initialized to be the uniform distribution and each **Σk** to be the identity (I) matrix.
+- Note that the **K-means** and **EG-GM** algorithms shall be written to **learn 5 clusters**. Run both algorithms for **10 iterations**. 
+- The algorithms can be initialized arbitrarily. It is recommended that the K-means centroids are initialized by randomly selecting 5 data points ([K-memoids](https://en.wikipedia.org/wiki/K-medoids)). For the EM-GMM, the mean vectors can be initialized in the same fashion, with **π** initialized to be the uniform distribution and each **Σk** to be the identity (I) matrix. Note that when initializing GMM we will first have run K-menas and we will use the resulting cluster centers as the means of the Gaussian components.
+- Finally, note that GMM yields a probability distribution over the cluster assignment for each point; whereas K-means gives a single hard assignment.
 
 More details about the inputs and the expected outputs are given below.
 
@@ -31,14 +30,11 @@ Note the following:
 - The name of the dataset is passed on via `X.csv`. This file is a comma separated file containing the data. Each row corresponds to a single vector xi .
 - The main .py file shall be named `hw3_clustering.py`. This file includes both the K-means and the EM-GMM algorithms.
 
-You should write your K-means and EM-GMM codes to learn 5 clusters. Run both algorithms for 10 iterations. You can initialize your algorithms arbitrarily. We recommend that you initialize the K-means centroids by randomly selecting 5 data points. For the EM-GMM, we also recommend you initialize the mean vectors in the same way, and initialize  π  to be the uniform distribution and each  Σk  to be the identity matrix. 
-
+We need to write the K-means and EM-GMM algorithms to learn 5 clusters. We need to run both algorithms for 10 iterations each. We will initialize them arbitrarily, the recommendation being initializing the K-means centroids by randomly selecting 5 data points. For the EM-GMM, it is also recommended to initialize the mean (μ) vectors in the same way, and initialize pi (π) to be the uniform distribution, and each covariance matrix per cluster (Σk) to be the identity matrix. 
 
 ## Expected Outputs from the program
 
-When executed, the code writes the output to the file listed below following the formatting requirements specified also below.
-
-When executed, the code writes several output files, each as described below. Note the formatting instructions given below. Where [iteration] and [cluster] are noted below, these shall be replaced with the iteration number and the cluster number.
+When executed, the code writes several output files, each as described below, where [iteration] and [cluster] shall be replaced with the iteration and cluster number.
 
 - centroids-[iteration].csv: This is a comma separated file containing the K-means centroids for a particular iteration. The  k th row should contain the  k th centroid, and there should be 5 rows. There should be 10 total files. For example, "centroids-3.csv" will contain the centroids after the 3rd iteration.
 - pi-[iteration].csv: This is a comma separated file containing the cluster probabilities of the EM-GMM model. The  k th row should contain the  k th probability,  πk , and there should be 5 rows. There should be 10 total files. For example, "pi-3.csv" will contain the cluster probabilities after the 3rd iteration.
@@ -64,3 +60,6 @@ The following datasets have been selected from the UCI Machine Learning Reposito
 - [In Depth: Gaussian Mixture Models](https://jakevdp.github.io/PythonDataScienceHandbook/05.12-gaussian-mixtures.html).
 - [Clustering with Gaussian Mixture Models](https://pythonmachinelearning.pro/clustering-with-gaussian-mixture-models/)
 - [K-Means Clustering in Python: A Practical Guide](https://realpython.com/k-means-clustering-python/)
+- [Build Better and Accurate Clusters with Gaussian Mixture Models](https://medium.com/analytics-vidhya/build-better-and-accurate-clusters-with-gaussian-mixture-models-ba9851154b1c)
+- [Implement Expectation-Maximization Algorithm(EM) in Python from Scratch](https://towardsdatascience.com/implement-expectation-maximization-em-algorithm-in-python-from-scratch-f1278d1b9137)
+- [Gaussian Mixture Modelling (GMM)](https://towardsdatascience.com/gaussian-mixture-modelling-gmm-833c88587c7f)
