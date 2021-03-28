@@ -9,12 +9,18 @@ In this assignment, we will implement the K-means and EM Gaussian mixture models
 
 - We are given **n** data points **{x1,…,xn}**, where each **xi∈Rd**.
 - With **K-means** we are trying to find **K centroids {μ1,…,μK}** and the corresponding assignments of **each data point {c1,…,cn}**, where each **ci ∈ {1,…,K}** and ci indicates which of the K clusters the observation xi belongs to. The objective function that we seek to minimize can be written:
+
 ![equation_1: L=∑ni=1∑Kk=11(ci=k)∥xi−μk∥2.](./ref/eq1.JPG?raw=true)
+
 - We will use the **Expectation-Maximisation** (EM) algorithm to learn the parameters of a **Gaussian mixture model** (GMM), that is learning **π**, **μ** and **Σ**. For this model, we assume a generative process for the data as follows:
+
 ![equation_2: xi|ci∼Normal(μci,Σci),ci∼Discrete(π).](./ref/eq2.JPG?raw=true)
+
 - In the above equation, the  *ith* observation is first assigned to one of  **K  clusters** according to the probabilities in **vector  π**, and the value of observation  **xi**  is then generated from one of  **K multivariate Gaussian distributions**, using the *mean (μ)* and *covariance indexed by ci*. 
 - Finally, implement the EM algorithm to maximize, the equation below over all parameters **π,μ1,…,μK,Σ1,…,ΣK** using the cluster assignments **c1,…,cn** as the hidden data:
+
 ![equation_3: p(x1,…,xn|π,μ,Σ)=∏ni=1p(xi|π,μ,Σ).](./ref/eq3.JPG?raw=true)
+
 - Note that the **K-means** and **EG-GM** algorithms shall be written to **learn 5 clusters**. Run both algorithms for **10 iterations**. 
 - The algorithms can be initialized arbitrarily. It is recommended that the K-means centroids are initialized by randomly selecting 5 data points ([K-memoids](https://en.wikipedia.org/wiki/K-medoids)). For the EM-GMM, the mean vectors can be initialized in the same fashion, with **π** initialized to be the uniform distribution and each **Σk** to be the identity (I) matrix. Note that when initializing GMM we will first have run K-menas and we will use the resulting cluster centers as the means of the Gaussian components.
 - Finally, note that GMM yields a probability distribution over the cluster assignment for each point; whereas K-means gives a single hard assignment.
@@ -45,9 +51,11 @@ When executed, the code writes several output files, each as described below, wh
 
 The following is a sample of some of the plots produced using 'Clustering_gmm.csv':
 
-![plot1](./images/newplot1.PNG?raw=true)
-![plot2](./images/newplot2.PNG?raw=true)
-![plot3](./images/newplot3.PNG?raw=true)
+![plot1](./images/newplot1.png?raw=true)
+
+![plot2](./images/newplot2.png?raw=true)
+
+![plot3](./images/newplot3.png?raw=true)
 
 
 ## Note on Correctness
