@@ -133,7 +133,7 @@ def calculate_mean_covariance(data, centroids, labels):
             
     return (initial_pi, initial_mean, initial_sigma)
 
-def initialise_parameters(data):
+def initialise_parameters(data, **kwargs):
     """
     Calls the function KMeans to obtain the starting centroids and label values and use them as starting parameters for the EMGMM algorithm. 
     
@@ -152,7 +152,13 @@ def initialise_parameters(data):
     - initial_sigma: initial covariance matrices (Σk, sigma), one matrix for each cluster k to input in the E-step of EM algorithm (shape: k, d*d)
         
     """
-    centroids, labels =  KMeans(data)
+
+    if 'path' in kwargs:
+        path = kwargs['path']
+    else:
+        path = os.path.join(os.getcwd(), "outputs")
+
+    centroids, labels =  KMeans(data, path=path)
 
     (initial_pi, initial_mean, initial_sigma) = calculate_mean_covariance(data, centroids, labels)
         
@@ -285,7 +291,7 @@ def compute_loss_function(data, pi, mu, sigma, tol):
 
     return loss_output
 
-def EMGMM(data, k:int = 5, iterations:int = 10, tol:float = 1e-6):
+def EMGMM(data, k:int = 5, iterations:int = 10, tol:float = 1e-6, **kwargs):
     """
     Performs the Expectation-Maximisation (EM) algorithm to learn the parameters of a Gaussian mixture model (GMM), that is learning **π**, **μ** and **Σ**. A Gaussian mixture model (GMM) attempts to discover a mixture of multi-dimensional Gaussian probability distributions that best model any input dataset. In the simple case, GMMs can be used for finding clusters in the same manner as k-means. For this model, we assume a generative process for the data as follows:
 
@@ -316,6 +322,11 @@ def EMGMM(data, k:int = 5, iterations:int = 10, tol:float = 1e-6):
     - sigma-[cluster]-[iteration].csv: This is a comma separated file containing the covariance matrix of one Gaussian of the EM-GMM model. If the data is  d -dimensional, there should be  d  rows with  d  entries in each row. There should be 50 total files. For example, "sigma-2-3.csv" will contain the covariance matrix of the 2nd Gaussian after the 3rd iteration.
 
     """
+
+    if 'path' in kwargs:
+        path = kwargs['path']
+    else:
+        path = os.path.join(os.getcwd(), "outputs")
         
     d = data.shape[1] # number of features (columns in the dataset)
     n = data.shape[0] # number of datapoints (rows in the dataset)
@@ -360,10 +371,10 @@ def EMGMM(data, k:int = 5, iterations:int = 10, tol:float = 1e-6):
     return centroids_list, predicted_labels_list
 
 
-"""
+###
 Prediction functions to visualise performance of EMGMM algorithm
 This is not needed in Vocareum
-"""
+###
 
 def predict(data, pi, mu, sigma, k:int = 5):
     """
@@ -430,9 +441,9 @@ def predict_proba(data, pi, mu, sigma, k:int = 5):
     return post_proba
 
 
-"""
+###
 Helper functions:
-"""
+###
 def write_csv(filename, outputdata, **kwargs):
     """
     Write the outputs to a csv file.
@@ -613,9 +624,9 @@ def plot_clusters(dataframe, centroids, labels, **kwargs):
 
     return
 
-"""
+###
 Main function
-"""
+###
 
 def main():
 
