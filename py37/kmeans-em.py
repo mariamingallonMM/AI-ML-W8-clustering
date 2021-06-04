@@ -371,9 +371,9 @@ def EMGMM(data, k:int = 5, iterations:int = 10, tol:float = 1e-6, **kwargs):
     return centroids_list, predicted_labels_list
 
 
-###
-Prediction functions to visualise performance of EMGMM algorithm
-This is not needed in Vocareum
+####
+#Prediction functions to visualise performance of EMGMM algorithm
+#This is not needed in Vocareum
 ###
 
 def predict(data, pi, mu, sigma, k:int = 5):
@@ -442,7 +442,7 @@ def predict_proba(data, pi, mu, sigma, k:int = 5):
 
 
 ###
-Helper functions:
+#Helper functions:
 ###
 def write_csv(filename, outputdata, **kwargs):
     """
@@ -625,7 +625,7 @@ def plot_clusters(dataframe, centroids, labels, **kwargs):
     return
 
 ###
-Main function
+#Main function
 ###
 
 def main():
