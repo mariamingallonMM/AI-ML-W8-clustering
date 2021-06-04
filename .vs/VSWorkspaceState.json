@@ -1,10 +1,9 @@
 {
   "ExpandedNodes": [
     "",
-    "\\datasets",
     "\\images",
     "\\py37"
   ],
-  "SelectedNode": "\\README.md",
+  "SelectedNode": "\\py37\\kmeans-em.py",
   "PreviewInSolutionExplorer": false
 }
