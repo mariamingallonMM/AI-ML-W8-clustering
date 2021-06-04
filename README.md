@@ -2,6 +2,8 @@
 
 ColumbiaX CSMM.102x Machine Learning Course. Week 8 Assignment on clustering. In this project we implement unsupervised machine learning models via the K-means and EM Gaussian mixture models.
 
+Note this work is also available on Kaggle at: https://www.kaggle.com/mariamingallon/ai-columbiax-ml-w8-kmeans-emgmm-clustering
+
 
 ## Instructions
 
